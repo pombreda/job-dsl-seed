@@ -21,7 +21,7 @@ if (githubProperties.exists()) {
 }
 
 def orgName = 'nebula-plugins'
-def folderName = 'Nebula/'
+def folderName = 'nebula-plugins'
 
 RepositoryService repoService = new RepositoryService(client);
 regex = [/gradle-(.*)-plugin/, /nebula-(\p{Lower}+)$/, /nebula-(.*)-plugin/]
