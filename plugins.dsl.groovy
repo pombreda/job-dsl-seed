@@ -93,6 +93,9 @@ def snapshot(nameBase, repoDesc, orgName, repoName, branchName) {
         scm {
             github("${orgName}/${repoName}", branchName, 'git')
         }
+        triggers {
+            cron('@daily')
+        }
         steps {
             gradle('clean build snapshot') // TODO Upload snapshots to oss.jfrog.org
         }
