@@ -72,6 +72,7 @@ def release(nameBase, repoDesc, orgName, repoName, branchName) {
         scm {
             github("${orgName}/${repoName}", branchName, 'git') {
                 //it / userRemoteConfigs / 'hudson.plugins.git.UserRemoteConfig' / credentialsId(gitHubCredentials)
+                it / extensions / 'hudson.plugins.git.extensions.impl.LocalBranch' / localBranch(branchName)
             }
         }
         steps {
