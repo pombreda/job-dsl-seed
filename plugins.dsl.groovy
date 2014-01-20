@@ -81,7 +81,6 @@ def release(nameBase, repoDesc, orgName, repoName, branchName) {
         }
         configure { project ->
             project / buildWrappers / 'com.cloudbees.jenkins.forge.WebDavMounter'(plugin:"cloudbees-forge-plugin@1.6")
-            project / triggers / 'com.cloudbees.jenkins.GitHubPushTrigger' / spec
         }
     }
 }
