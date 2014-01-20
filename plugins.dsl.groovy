@@ -46,7 +46,7 @@ repoService.getOrgRepositories(orgName).findAll { repo -> regex.any { repo.name 
     }
 
     // Pull Requests are outside of a specific branch
-    pullrequest(nameBase, repo.description, orgName, repoName, '*' ) // Not sure what the branch should be
+    pullrequest("${folderName}${repo.name}-pull-requests", repo.description, orgName, repoName, '*' ) // Not sure what the branch should be
 }
 
 def base(String repoDesc) {
