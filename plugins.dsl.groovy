@@ -92,7 +92,7 @@ def snapshot(nameBase, repoDesc, orgName, repoName, branchName) {
             github("${orgName}/${repoName}", branchName, 'git')
         }
         steps {
-            gradle('clean build') // TODO Upload snapshots to oss.jfrog.org
+            gradle('clean build snapshot') // TODO Upload snapshots to oss.jfrog.org
         }
         configure { project ->
             project / triggers / 'com.cloudbees.jenkins.GitHubPushTrigger' / spec
