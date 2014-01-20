@@ -78,6 +78,9 @@ def release(nameBase, repoDesc, orgName, repoName, branchName) {
         steps {
             gradle('clean release')
         }
+        configure { project ->
+            project / triggers / 'com.cloudbees.jenkins.GitHubPushTrigger' / spec
+        }
     }
 }
 
@@ -90,6 +93,9 @@ def snapshot(nameBase, repoDesc, orgName, repoName, branchName) {
         }
         steps {
             gradle('clean build') // TODO Upload snapshots to oss.jfrog.org
+        }
+        configure { project ->
+            project / triggers / 'com.cloudbees.jenkins.GitHubPushTrigger' / spec
         }
     }
 }
