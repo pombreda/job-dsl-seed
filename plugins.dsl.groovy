@@ -40,13 +40,13 @@ repoService.getOrgRepositories(orgName).findAll { repo -> regex.any { repo.name 
 
     if (gradleBranches.isEmpty()) {
         // Master
-        def nameBase = "${folderName}${repo.name}-master"
+        def nameBase = "${folderName}${repo.name}"
         snapshot(nameBase, repo.description, orgName, repoName, 'master')
         release(nameBase, repo.description, orgName, repoName, 'master')
     }
 
     // Pull Requests are outside of a specific branch
-    pullrequest("${folderName}${repo.name}-pull-requests", repo.description, orgName, repoName, '*' ) // Not sure what the branch should be
+    pullrequest("${folderName}${repo.name}", repo.description, orgName, repoName, '*' ) // Not sure what the branch should be
 }
 
 def base(String repoDesc) {
