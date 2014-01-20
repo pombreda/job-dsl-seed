@@ -71,7 +71,7 @@ def release(nameBase, repoDesc, orgName, repoName, branchName) {
     job.with {
         name "${nameBase}-release"
         scm {
-            github("${orgName}/${repoName}", branchName, 'git') {
+            github("${orgName}/${repoName}", branchName, 'ssh') {
                 //it / userRemoteConfigs / 'hudson.plugins.git.UserRemoteConfig' / credentialsId(gitHubCredentials)
                 it / extensions / 'hudson.plugins.git.extensions.impl.LocalBranch' / localBranch(branchName)
             }
@@ -91,7 +91,7 @@ def snapshot(nameBase, repoDesc, orgName, repoName, branchName) {
     job.with {
         name "${nameBase}-snapshot"
         scm {
-            github("${orgName}/${repoName}", branchName, 'git')
+            github("${orgName}/${repoName}", branchName, 'ssh')
         }
         triggers {
             cron('@daily')
@@ -110,7 +110,7 @@ def pullrequest(nameBase, repoDesc, orgName, repoName, branchName) {
     job.with {
         name "${nameBase}-pull-requests"
         scm {
-            github("${orgName}/${repoName}", branchName, 'git')
+            github("${orgName}/${repoName}", branchName, 'ssh')
         }
         steps {
             gradle('clean check')
