@@ -90,7 +90,9 @@ def snapshot(nameBase, repoDesc, orgName, repoName, branchName) {
     job.with {
         name "${nameBase}-snapshot"
         scm {
-            github("${orgName}/${repoName}", branchName, 'ssh')
+            github("${orgName}/${repoName}", branchName, 'ssh') {
+                it / skipTags << 'true'
+            }
         }
         triggers {
             cron('@daily')
@@ -109,7 +111,9 @@ def pullrequest(nameBase, repoDesc, orgName, repoName, branchName) {
     job.with {
         name "${nameBase}-pull-requests"
         scm {
-            github("${orgName}/${repoName}", branchName, 'ssh')
+            github("${orgName}/${repoName}", branchName, 'ssh') {
+                it / skipTags << 'true'
+            }
         }
         steps {
             gradle('clean check')
