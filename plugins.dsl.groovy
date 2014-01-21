@@ -49,7 +49,7 @@ repoService.getOrgRepositories(orgName).findAll { repo -> regex.any { repo.name 
     pullrequest("${folderName}${repo.name}", repo.description, orgName, repoName, '*' ) // Not sure what the branch should be
 }
 
-def base(String repoDesc) {
+def base(String repoDesc, boolean linkPrivate = true) {
     job {
         description ellipsize(repoDesc, 255)
         logRotator(60,-1,-1,20)
@@ -57,8 +57,24 @@ def base(String repoDesc) {
             timeout(20)
         }
         jdk('Sun JDK 1.6 (latest)')
+        if (linkPrivate) {
+            steps {
+                shell('''
+                if [ ! -d $HOME/.gradle ]; then
+                   mkdir $HOME/.gradle
+                fi
+    
+                if [ ! -e $HOME/.gradle/gradle.properties ]; then
+                   ln -s /private/netflixoss/gradle/gradle.properties $HOME/.gradle/gradle.properties
+                fi
+                '''.stripIndent())
+            }
+        }
         configure { project ->
             project / 'properties' / 'com.cloudbees.jenkins.plugins.PublicKey'(plugin:'cloudbees-public-key@1.1')
+            if (linkPrivate) {
+                project / buildWrappers / 'com.cloudbees.jenkins.forge.WebDavMounter'(plugin:"cloudbees-forge-plugin@1.6")
+            }
         }
         publishers {
             archiveJunit('**/build/test-results/TEST*.xml')
@@ -77,10 +93,7 @@ def release(nameBase, repoDesc, orgName, repoName, branchName) {
             }
         }
         steps {
-            gradle('clean release --stacktrace')
-        }
-        configure { project ->
-            project / buildWrappers / 'com.cloudbees.jenkins.forge.WebDavMounter'(plugin:"cloudbees-forge-plugin@1.6")
+            gradle('clean release --stacktrace --refresh-dependencies')
         }
     }
 }
@@ -98,7 +111,7 @@ def snapshot(nameBase, repoDesc, orgName, repoName, branchName) {
             cron('@daily')
         }
         steps {
-            gradle('clean build snapshot') // TODO Upload snapshots to oss.jfrog.org
+            gradle('clean build snapshot --refresh-dependencies') // TODO a bad nebula-pluging is cached right now, and a refresh workspace won't fix it.
         }
         configure { project ->
             project / triggers / 'com.cloudbees.jenkins.GitHubPushTrigger' / spec
@@ -107,7 +120,7 @@ def snapshot(nameBase, repoDesc, orgName, repoName, branchName) {
 }
 
 def pullrequest(nameBase, repoDesc, orgName, repoName, branchName) {
-    def job = base(repoDesc)
+    def job = base(repoDesc, false)
     job.with {
         name "${nameBase}-pull-requests"
         scm {
