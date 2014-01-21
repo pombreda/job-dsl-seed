@@ -77,7 +77,7 @@ def release(nameBase, repoDesc, orgName, repoName, branchName) {
             }
         }
         steps {
-            gradle('clean release')
+            gradle('clean release --stacktrace')
         }
         configure { project ->
             project / buildWrappers / 'com.cloudbees.jenkins.forge.WebDavMounter'(plugin:"cloudbees-forge-plugin@1.6")
