@@ -4,6 +4,10 @@ import org.eclipse.egit.github.core.*
 import org.eclipse.egit.github.core.client.*
 import org.eclipse.egit.github.core.service.*
 
+// TODO Set name of build to the version being released, might require a module.properties like file
+// TODO Index jobs, so that customizations can be easily added
+// TODO Publish latest version (or each version of Gradle) somewhere, like the netflix-plugins.github.io page
+
 GitHubClient client = new GitHubClient()
 
 def githubProperties = new File(GITHUB_PROPERTIES?:System.getenv()['GITHUB_PROPERTIES'])
@@ -27,6 +31,7 @@ RepositoryService repoService = new RepositoryService(client);
 regex = [/gradle-(.*)-plugin/, /nebula-(\p{Lower}+)$/, /nebula-(.*)-plugin/]
 repoService.getOrgRepositories(orgName).findAll { repo -> regex.any { repo.name =~ it } }.each { Repository repo ->
     def repoName = repo.name
+    def description = "${repo.description} - http://github.com/$orgName/$repoName"
 
     println "Creating jobs for $repoName"
 
@@ -34,19 +39,19 @@ repoService.getOrgRepositories(orgName).findAll { repo -> regex.any { repo.name 
     def gradleBranches = branches.findAll { it.name.startsWith('gradle-') }
     gradleBranches.collect { RepositoryBranch branch ->
         def nameBase = "${folderName}${repo.name}-${branch.name - 'gradle-'}"
-        snapshot(nameBase, repo.description, orgName, repoName, branch.name )
-        release(nameBase, repo.description, orgName, repoName, branch.name )
+        snapshot(nameBase, description, orgName, repoName, branch.name )
+        release(nameBase, description, orgName, repoName, branch.name )
     }
 
     if (gradleBranches.isEmpty()) {
         // Master
         def nameBase = "${folderName}${repo.name}"
-        snapshot(nameBase, repo.description, orgName, repoName, 'master')
-        release(nameBase, repo.description, orgName, repoName, 'master')
+        snapshot(nameBase, description, orgName, repoName, 'master')
+        release(nameBase, description, orgName, repoName, 'master')
     }
 
     // Pull Requests are outside of a specific branch
-    pullrequest("${folderName}${repo.name}", repo.description, orgName, repoName, '*' ) // Not sure what the branch should be
+    pullrequest("${folderName}${repo.name}", description, orgName, repoName, '*' ) // Not sure what the branch should be
 }
 
 def base(String repoDesc, boolean linkPrivate = true) {
@@ -111,7 +116,7 @@ def snapshot(nameBase, repoDesc, orgName, repoName, branchName) {
             cron('@daily')
         }
         steps {
-            gradle('clean build snapshot --refresh-dependencies') // TODO a bad nebula-pluging is cached right now, and a refresh workspace won't fix it.
+            gradle('clean build snapshot --stacktrace --refresh-dependencies') // TODO a bad nebula-pluging is cached right now, and a refresh workspace won't fix it.
         }
         configure { project ->
             project / triggers / 'com.cloudbees.jenkins.GitHubPushTrigger' / spec
@@ -129,7 +134,7 @@ def pullrequest(nameBase, repoDesc, orgName, repoName, branchName) {
             }
         }
         steps {
-            gradle('clean check')
+            gradle('clean check --stacktrace --refresh-dependencies')
         }
         configure { project ->
             project / triggers / 'com.cloudbees.jenkins.plugins.github__pull.PullRequestBuildTrigger'(plugin:'github-pull-request-build@1.0-beta-2') / spec ()
