@@ -33,8 +33,12 @@ def WEB_HOOK_URL = 'https://netflixoss.ci.cloudbees.com/github-webhook/'
 def orgName = 'nebula-plugins'
 def folderName = 'nebula-plugins/'
 
-RepositoryService repoService = new RepositoryServiceExtra(client);
-regex = [/gradle-(.*)-plugin/, /nebula-(\p{Lower}+)$/, /nebula-(.*)-plugin/]
+RepositoryServiceExtra repoService = new RepositoryServiceExtra(client);
+TeamService teamService = new TeamService(client);
+List<Team> teams = teamService.getTeams(orgName)
+
+def regex = [/gradle-(.*)-plugin/, /nebula-(\p{Lower}+)$/, /nebula-(.*)-plugin/]
+regex = [/gradle-ospackage-plugin/]
 repoService.getOrgRepositories(orgName).findAll { repo -> regex.any { repo.name =~ it } }.each { Repository repo ->
     def repoName = repo.name
     def description = "${repo.description} - http://github.com/$orgName/$repoName"
@@ -60,9 +64,12 @@ repoService.getOrgRepositories(orgName).findAll { repo -> regex.any { repo.name 
     pullrequest("${folderName}${repo.name}", description, orgName, repoName, '*' ) // Not sure what the branch should be
 
     // Establish WebHooks
-    List<RepositoryHook> hooks = repoService.getHooks(repo)
+    List<RepositoryHook> hooks = repoService.getHooksExtra(repo)
+
     addHook(hooks, repoService, repo, PULL_REQUEST_URL, ['pull_request'] as String[])
     addHook(hooks, repoService, repo, WEB_HOOK_URL, ['push'] as String[])
+    addTeam(teams, teamService, orgName, repo, "${repo.name}-contrib", 'push')
+    //addTeam(teams, teamService, orgName, repo.name, "${repo.name}-admin", 'admin')
 }
 
 // Via https://github.com/barchart/barchart-pivotal-github/tree/master/src/main/java/com/barchart/github
@@ -73,8 +80,9 @@ public class RepositoryHookExtra extends RepositoryHook {
 
     private volatile String[] events = new String[0];
 
-    public void setEvents(final String[] events) {
+    public RepositoryHookExtra setEvents(final String[] events) {
         this.events = events;
+        return this;
     }
 
     public String[] getEvents() {
@@ -112,20 +120,45 @@ public class RepositoryServiceExtra extends RepositoryService {
         }.getType());
         return getAll(request);
     }
-
 }
 
 def addHook(List<RepositoryHook> hooks, RepositoryService repoService, Repository repo, String hookUrl, String[] events) {
-    def hasWebHook = hooks.contains { RepositoryHook hook -> hook.config.get('url') == hookUrl }
+    def hasWebHook = hooks.any { RepositoryHook hook -> println "${hook.config.get('url')} vs ${hookUrl}"; hook.config.get('url') == hookUrl }
     if (!hasWebHook) {
         def hook = new RepositoryHookExtra()
                 .setActive(true)
-                .setConfig([url: hookUrl])
+                .setConfig([url: hookUrl, content_type: 'form'])
                 .setCreatedAt(new Date())
                 .setName('web')
                 .setUpdatedAt(new Date())
                 .setEvents(events)
+        println GsonUtils.getGson().toJson(hook);
         repoService.createHook(repo, hook)
+    }
+}
+
+// Create team for a single repository
+def addTeam(List<Team> teams, TeamService teamService, String orgName, Repository repository, String contribTeamName, String permission) {
+    def foundTeam = teams.find { Team team -> team.name == contribTeamName }
+    if (!foundTeam) {
+        def team = new Team()
+                .setPermission(permission) // 'push' vs 'admin'
+                .setName(contribTeamName)
+        println GsonUtils.getGson().toJson(team);
+        foundTeam = teamService.createTeam(orgName, team)
+    }
+
+    List<Repository> repos = teamService.getRepositories(foundTeam.id)
+    def hasRepo = repos.any { Repository repo -> repo.name == repo.name }
+    if (!hasRepo) {
+        teamService.addRepository(foundTeam.id, repository)
+    }
+}
+
+// Ensure this repo is in the org-wide "contrib"
+def ensureInContrib(TeamService teamService, String contribTeamName) {
+    def foundTeam = teams.find { Team team -> team.name == contribTeamName }
+    if (!foundTeam) {
     }
 }
 
