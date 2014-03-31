@@ -3,9 +3,6 @@
 import org.eclipse.egit.github.core.*
 import org.eclipse.egit.github.core.client.*
 import org.eclipse.egit.github.core.service.*
-import static org.eclipse.egit.github.core.client.IGitHubConstants.*;
-
-import com.google.gson.reflect.TypeToken;
 
 // TODO Set name of build to the version being released, might require a module.properties like file
 // TODO Index jobs, so that customizations can be easily added
@@ -27,18 +24,12 @@ if (githubProperties.exists()) {
     println "Not providing credentials"
 }
 
-def PULL_REQUEST_URL = 'https://netflixoss.ci.cloudbees.com/github-pull-request-hook/'
-def WEB_HOOK_URL = 'https://netflixoss.ci.cloudbees.com/github-webhook/'
-
 def orgName = 'nebula-plugins'
 def folderName = 'nebula-plugins/'
 
-RepositoryServiceExtra repoService = new RepositoryServiceExtra(client);
-TeamService teamService = new TeamService(client);
-List<Team> teams = teamService.getTeams(orgName)
+RepositoryService repoService = new RepositoryService(client);
 
 def regex = [/gradle-(.*)-plugin/, /nebula-(\p{Lower}+)$/, /nebula-(.*)-plugin/]
-regex = [/gradle-ospackage-plugin/]
 repoService.getOrgRepositories(orgName).findAll { repo -> regex.any { repo.name =~ it } }.each { Repository repo ->
     def repoName = repo.name
     def description = "${repo.description} - http://github.com/$orgName/$repoName"
@@ -62,104 +53,6 @@ repoService.getOrgRepositories(orgName).findAll { repo -> regex.any { repo.name 
 
     // Pull Requests are outside of a specific branch
     pullrequest("${folderName}${repo.name}", description, orgName, repoName, '*' ) // Not sure what the branch should be
-
-    // Establish WebHooks
-    List<RepositoryHook> hooks = repoService.getHooksExtra(repo)
-
-    addHook(hooks, repoService, repo, PULL_REQUEST_URL, ['pull_request'] as String[])
-    addHook(hooks, repoService, repo, WEB_HOOK_URL, ['push'] as String[])
-    addTeam(teams, teamService, orgName, repo, "${repo.name}-contrib", 'push')
-    //addTeam(teams, teamService, orgName, repo.name, "${repo.name}-admin", 'admin')
-}
-
-// Via https://github.com/barchart/barchart-pivotal-github/tree/master/src/main/java/com/barchart/github
-
-public class RepositoryHookExtra extends RepositoryHook {
-
-    private static final long serialVersionUID = 1L;
-
-    private volatile String[] events = new String[0];
-
-    public RepositoryHookExtra setEvents(final String[] events) {
-        this.events = events;
-        return this;
-    }
-
-    public String[] getEvents() {
-        return events;
-    }
-
-}
-
-public class RepositoryServiceExtra extends RepositoryService {
-
-    public RepositoryServiceExtra(final GitHubClient client) {
-        super(client);
-    }
-
-    @Override
-    public RepositoryHookExtra createHook(
-            final IRepositoryIdProvider repository, final RepositoryHook hook)
-            throws IOException {
-        final String id = getId(repository);
-        final StringBuilder uri = new StringBuilder(SEGMENT_REPOS);
-        uri.append('/').append(id);
-        uri.append(SEGMENT_HOOKS);
-        return client.post(uri.toString(), hook, RepositoryHookExtra.class);
-    }
-
-    public List<RepositoryHookExtra> getHooksExtra(
-            final IRepositoryIdProvider repository) throws IOException {
-        final String id = getId(repository);
-        final StringBuilder uri = new StringBuilder(SEGMENT_REPOS);
-        uri.append('/').append(id);
-        uri.append(SEGMENT_HOOKS);
-        final PagedRequest<RepositoryHookExtra> request = createPagedRequest();
-        request.setUri(uri);
-        request.setType(new TypeToken<List<RepositoryHookExtra>>() {
-        }.getType());
-        return getAll(request);
-    }
-}
-
-def addHook(List<RepositoryHook> hooks, RepositoryService repoService, Repository repo, String hookUrl, String[] events) {
-    def hasWebHook = hooks.any { RepositoryHook hook -> println "${hook.config.get('url')} vs ${hookUrl}"; hook.config.get('url') == hookUrl }
-    if (!hasWebHook) {
-        def hook = new RepositoryHookExtra()
-                .setActive(true)
-                .setConfig([url: hookUrl, content_type: 'form'])
-                .setCreatedAt(new Date())
-                .setName('web')
-                .setUpdatedAt(new Date())
-                .setEvents(events)
-        println GsonUtils.getGson().toJson(hook);
-        repoService.createHook(repo, hook)
-    }
-}
-
-// Create team for a single repository
-def addTeam(List<Team> teams, TeamService teamService, String orgName, Repository repository, String contribTeamName, String permission) {
-    def foundTeam = teams.find { Team team -> team.name == contribTeamName }
-    if (!foundTeam) {
-        def team = new Team()
-                .setPermission(permission) // 'push' vs 'admin'
-                .setName(contribTeamName)
-        println GsonUtils.getGson().toJson(team);
-        foundTeam = teamService.createTeam(orgName, team)
-    }
-
-    List<Repository> repos = teamService.getRepositories(foundTeam.id)
-    def hasRepo = repos.any { Repository repo -> repo.name == repo.name }
-    if (!hasRepo) {
-        teamService.addRepository(foundTeam.id, repository)
-    }
-}
-
-// Ensure this repo is in the org-wide "contrib"
-def ensureInContrib(TeamService teamService, String contribTeamName) {
-    def foundTeam = teams.find { Team team -> team.name == contribTeamName }
-    if (!foundTeam) {
-    }
 }
 
 def base(String repoDesc, boolean linkPrivate = true) {
