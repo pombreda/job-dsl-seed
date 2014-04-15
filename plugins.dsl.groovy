@@ -92,6 +92,7 @@ def release(nameBase, repoDesc, orgName, repoName, branchName) {
     def job = base(repoDesc)
     job.with {
         name "${nameBase}-release"
+        label 'hi-speed'
         scm {
             github("${orgName}/${repoName}", branchName, 'ssh') {
                 //it / userRemoteConfigs / 'hudson.plugins.git.UserRemoteConfig' / credentialsId(gitHubCredentials)
