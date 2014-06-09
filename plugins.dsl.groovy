@@ -62,7 +62,7 @@ def base(String repoDesc, boolean linkPrivate = true) {
         wrappers {
             timeout(20)
         }
-        jdk('Sun JDK 1.6 (latest)')
+        jdk('Oracle JDK 1.7 (latest)')
         if (linkPrivate) {
             steps {
                 shell('''
@@ -109,7 +109,6 @@ def snapshot(nameBase, repoDesc, orgName, repoName, branchName) {
     def job = base(repoDesc)
     job.with {
         name "${nameBase}-snapshot"
-        jdk('Oracle JDK 1.7 (latest)')
         scm {
             github("${orgName}/${repoName}", branchName, 'ssh') {
                 it / skipTags << 'true'
