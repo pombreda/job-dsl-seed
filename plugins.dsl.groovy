@@ -71,7 +71,7 @@ def base(String repoDesc, boolean linkPrivate = true) {
                 fi
     
                 if [ ! -e $HOME/.gradle/gradle.properties ]; then
-                   ln -s /private/netflixoss/gradle/gradle.properties $HOME/.gradle/gradle.properties
+                   ln -s /private/netflixoss/nebula-plugins/gradle.properties $HOME/.gradle/gradle.properties
                 fi
                 '''.stripIndent())
             }
