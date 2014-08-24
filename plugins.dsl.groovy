@@ -60,7 +60,9 @@ def base(String repoDesc, boolean linkPrivate = true) {
         description ellipsize(repoDesc, 255)
         logRotator(60,-1,-1,20)
         wrappers {
-            timeout(20)
+            timeout {
+                absolute(60)
+            }
         }
         jdk('Oracle JDK 1.7 (latest)')
         if (linkPrivate) {
