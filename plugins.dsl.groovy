@@ -60,9 +60,11 @@ def base(String repoDesc, boolean linkPrivate = true) {
         description ellipsize(repoDesc, 255)
         logRotator(60,-1,-1,20)
         wrappers {
+            /* Waiting on Cloudbees 
             timeout {
                 absolute(60)
             }
+            */
         }
         jdk('Oracle JDK 1.7 (latest)')
         if (linkPrivate) {
@@ -72,9 +74,8 @@ def base(String repoDesc, boolean linkPrivate = true) {
                    mkdir $HOME/.gradle
                 fi
     
-                if [ ! -e $HOME/.gradle/gradle.properties ]; then
-                   ln -s /private/netflixoss/nebula-plugins/gradle.properties $HOME/.gradle/gradle.properties
-                fi
+                rm -f $HOME/.gradle/gradle.properties
+                ln -s /private/netflixoss/nebula-plugins/gradle.properties $HOME/.gradle/gradle.properties
                 '''.stripIndent())
             }
         }
