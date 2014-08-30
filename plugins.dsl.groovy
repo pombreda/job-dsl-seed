@@ -112,6 +112,7 @@ def snapshot(nameBase, repoDesc, orgName, repoName, branchName) {
     def job = base(repoDesc)
     job.with {
         name "${nameBase}-snapshot"
+        label 'hi-speed'
         scm {
             github("${orgName}/${repoName}", branchName, 'ssh') {
                 it / skipTags << 'true'
@@ -133,6 +134,7 @@ def pullrequest(nameBase, repoDesc, orgName, repoName, branchName) {
     def job = base(repoDesc, false)
     job.with {
         name "${nameBase}-pull-requests"
+        label 'hi-speed'
         scm {
             github("${orgName}/${repoName}", branchName, 'ssh') {
                 it / skipTags << 'true'
