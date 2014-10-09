@@ -66,7 +66,7 @@ def base(String repoDesc, boolean linkPrivate = true) {
             }
             */
         }
-        jdk('Oracle JDK 1.7 (latest)')
+        jdk('Oracle JDK 7u60')
         if (linkPrivate) {
             steps {
                 shell('''
