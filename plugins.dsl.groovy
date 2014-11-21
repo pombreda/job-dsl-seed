@@ -29,7 +29,7 @@ def folderName = 'nebula-plugins/'
 
 RepositoryService repoService = new RepositoryService(client);
 
-def regex = [/gradle-(.*)-plugin/, /nebula-(\p{Lower}+)$/, /nebula-(.*)-plugin/]
+def regex = [/gradle-(.*)-plugin/, /nebula(-(\p{Lower}+))+$/, /nebula-(.*)-plugin/]
 repoService.getOrgRepositories(orgName).findAll { repo -> regex.any { repo.name =~ it } }.each { Repository repo ->
     def repoName = repo.name
     def description = "${repo.description} - http://github.com/$orgName/$repoName"
